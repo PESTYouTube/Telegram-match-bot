@@ -122,7 +122,7 @@ async def choose_leagues(message):
 		logger.error("Ошибка БД: %s", exc)
 		await bot.send_message(
 			message.chat.id,
-			"❌ База данных недоступна. Проверь DB_PASSWORD в файле .env",
+			"❌ База данных недоступна. Проверь права на папку data/ в проекте",
 		)
 		return
 	text = (
