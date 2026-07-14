@@ -185,6 +185,7 @@ class ParcingSoccer:
 				or self.previous_matches[title] != match_key
 			)
 
+
 			if score_changed:
 
 				new_home = int(home_score) if home_score else 0
