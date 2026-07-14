@@ -38,7 +38,7 @@ class ParcingSoccer:
 		self.score_matches: dict[str, list[str]] = {}
 		self.previous_matches: dict[str, str] = {}
 		self.match_leagues: dict[str, str] = {}
-		self.sent_goals: set[str] = set()
+		self.sent_goals: dict = dict()
 
 		self.update_headers()
 
@@ -60,10 +60,10 @@ class ParcingSoccer:
 		header = parent.find('div', class_='block_header')
 		if not header:
 			return None
-		tournament_span = header.find('span')
-		if not tournament_span:
+		tournament_href = header.find('a')
+		if not tournament_href:
 			return None
-		return tournament_span.get_text(strip=True)
+		return tournament_href.get("href")
 
 	def _resolve_league(self, tournament_name: str) -> str | None:
 		for league in self.leagues_to_track:
@@ -104,6 +104,8 @@ class ParcingSoccer:
 
 				tournament_name = self._get_tournament_name(link)
 				league = self._resolve_league(tournament_name) if tournament_name else None
+
+
 				if not league:
 					continue
 
@@ -183,9 +185,14 @@ class ParcingSoccer:
 				or self.previous_matches[title] != match_key
 			)
 
+
 			if score_changed:
-				goal_key = f"{title}_{home_score}_{away_score}"
-				if goal_key not in self.sent_goals:
+
+				new_home = int(home_score) if home_score else 0
+				new_away = int(away_score) if away_score else 0
+				old_home = int(self.sent_goals[title][0])
+				old_away = int(self.sent_goals[title][1])
+				if new_home > old_home or new_away > old_away:
 					goal_text = f"⚽ ГООООООЛ в матче {title}! Счет {home_score}:{away_score}"
 					print(f"ГООООООЛ в матче {title}! Счет {home_score}:{away_score}")
 					events.append(MatchEvent(
@@ -194,7 +201,18 @@ class ParcingSoccer:
 						text=goal_text,
 						league=league,
 					))
-					self.sent_goals.add(goal_key)
+					self.sent_goals[title] = [home_score, away_score]
+				elif old_home == 0 and old_away == 0 and (new_home > 0 or new_away > 0):
+					goal_text = f"Матч {title} начался! Не пропусти гол!)"
+					print(f"Матч {title} начался!")
+					events.append(MatchEvent(
+						type='start',
+						match_title=title,
+						text=goal_text,
+						league=league,
+					))
+					self.sent_goals[title] = [home_score, away_score]
+
 
 			if state_changed:
 				update_text = format_match_text(title, time_div, home_score, away_score)
@@ -219,6 +237,8 @@ class ParcingSoccer:
 					text=finished_text,
 					league=self.match_leagues.pop(old_title, None),
 				))
+				if old_title in self.sent_goals:
+					del self.sent_goals[old_title]
 
 		self.previous_matches = current_matches
 		return events
