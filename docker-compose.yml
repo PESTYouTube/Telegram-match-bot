@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    container_name: matchbot-bot
+    restart: unless-stopped
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      DATABASE_PATH: /app/data/matchbot.db
+    volumes:
+      - ./data:/app/data
